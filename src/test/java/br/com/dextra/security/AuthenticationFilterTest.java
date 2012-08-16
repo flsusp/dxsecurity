@@ -12,6 +12,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import br.com.dextra.security.configuration.Configuration;
+import br.com.dextra.security.configuration.DefaultCookieManager;
 import br.com.dextra.security.configuration.ForbiddenResponseHandler;
 import br.com.dextra.security.configuration.StringBase64CertificateRepository;
 import br.com.dextra.security.utils.AuthenticationUtil;
@@ -42,7 +43,7 @@ public class AuthenticationFilterTest {
 		credential.setSignature(signature);
 
 		HttpServletRequestStub req = new HttpServletRequestStub();
-		req.addCookie(new Cookie(AuthenticationServlet.generateCookieName(), credential.toStringFull()));
+		req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), credential.toStringFull()));
 		HttpServletResponseStub resp = new HttpServletResponseStub();
 		FilterChainStub chain = new FilterChainStub();
 
@@ -105,7 +106,7 @@ public class AuthenticationFilterTest {
 		credential.setSignature(signature);
 
 		HttpServletRequestStub req = new HttpServletRequestStub();
-		req.addCookie(new Cookie(AuthenticationServlet.generateCookieName(), credential.toStringFull()));
+		req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), credential.toStringFull()));
 		HttpServletResponseStub resp = new HttpServletResponseStub();
 		FilterChainStub chain = new FilterChainStub();
 
@@ -138,7 +139,7 @@ public class AuthenticationFilterTest {
 		credential.setSignature(signature);
 
 		HttpServletRequestStub req = new HttpServletRequestStub();
-		req.addCookie(new Cookie(AuthenticationServlet.generateCookieName(), credential.toStringFull()));
+		req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), credential.toStringFull()));
 		HttpServletResponseStub resp = new HttpServletResponseStub();
 		FilterChainStub chain = new FilterChainStub();
 
@@ -172,7 +173,7 @@ public class AuthenticationFilterTest {
 		credential.setSignature(signature);
 
 		HttpServletRequestStub req = new HttpServletRequestStub();
-		req.addCookie(new Cookie(AuthenticationServlet.generateCookieName(), credential.toStringFull()));
+		req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), credential.toStringFull()));
 		HttpServletResponseStub resp = new HttpServletResponseStub();
 		FilterChainStub chain = new FilterChainStub();
 

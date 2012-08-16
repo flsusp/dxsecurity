@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.ParseException;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.Set;
-import java.util.TreeSet;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -15,7 +12,6 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -35,13 +31,6 @@ public class AuthenticationFilter implements Filter {
 	private static final String AUTH_REQUEST_PARAMETER = "auth";
 
 	private Configuration configuration;
-
-	private static final Comparator<? super Cookie> cookieComparator = new Comparator<Cookie>() {
-		@Override
-		public int compare(Cookie o1, Cookie o2) {
-			return (-1) * o1.getName().compareTo(o2.getName());
-		}
-	};
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
@@ -64,24 +53,24 @@ public class AuthenticationFilter implements Filter {
 			logger.info("Received authentication token : {}", credential);
 		} catch (InvalidAuthTokenException e) {
 			logger.warn("Invalid authentication token received.", e);
-			expireCookies(request, response);
+			configuration.getCookieManager().expireCookies(request, response);
 			sendError(request, response);
 			return;
 		} catch (ExpiredAuthTokenException e) {
 			logger.warn("Invalid authentication token received.", e);
-			expireCookies(request, response);
+			configuration.getCookieManager().expireCookies(request, response);
 			sendExpiryError(request, response, token);
 			return;
 		} catch (Exception e) {
 			logger.warn("Error while processing the received authentication token : " + token, e);
-			expireCookies(request, response);
+			configuration.getCookieManager().expireCookies(request, response);
 			sendError(request, response);
 			return;
 		}
 
 		try {
 			if (mustRenew(credential)) {
-				expireCookies(request, response);
+				configuration.getCookieManager().expireCookies(request, response);
 				credential = renew(credential, request, response);
 			}
 		} catch (Exception e) {
@@ -98,20 +87,6 @@ public class AuthenticationFilter implements Filter {
 		}
 	}
 
-	public static void expireCookies(HttpServletRequest request, HttpServletResponse response) {
-		Cookie[] cookies = request.getCookies();
-		if (cookies != null) {
-			for (Cookie cookie : cookies) {
-				if (cookie.getName().startsWith(AuthenticationServlet.AUTH_COOKIE_NAME)) {
-					cookie.setMaxAge(0);
-					cookie.setValue(null);
-					cookie.setPath(AuthenticationServlet.generateCookiePath(request));
-					response.addCookie(cookie);
-				}
-			}
-		}
-	}
-
 	protected Credential renew(Credential credential, HttpServletRequest request, HttpServletResponse response)
 			throws ParseException {
 		credential = credential.renew();
@@ -121,7 +96,7 @@ public class AuthenticationFilter implements Filter {
 		logger.info("Authentication token renew to : {}", credential);
 
 		credential.setSignature(signature);
-		AuthenticationServlet.createAuthCookie(credential.toStringFull(), request, response,
+		configuration.getCookieManager().createAuthCookie(credential.toStringFull(), request, response,
 				configuration.getCookieExpiryTimeout());
 
 		return credential;
@@ -208,23 +183,7 @@ public class AuthenticationFilter implements Filter {
 			return decode(authToken);
 		}
 
-		Set<Cookie> cookiesFound = new TreeSet<Cookie>(cookieComparator);
-
-		Cookie[] cookies = request.getCookies();
-		if (cookies != null) {
-			for (Cookie cookie : cookies) {
-				if (cookie.getName().startsWith(AuthenticationServlet.AUTH_COOKIE_NAME)) {
-					cookiesFound.add(cookie);
-				}
-			}
-		}
-
-		if (cookiesFound.size() > 0) {
-			Cookie cookie = cookiesFound.iterator().next();
-			return decode(cookie.getValue());
-		} else {
-			return null;
-		}
+		return configuration.getCookieManager().extractAuthTokenFromCookie(request);
 	}
 
 	@Override

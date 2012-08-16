@@ -24,6 +24,7 @@ public class Configuration {
 	private ResponseHandler authenticationFailedHandler;
 	private ResponseHandler authenticationSuccessHandler;
 	private ResponseHandler authenticationExpiredHanler;
+	private CookieManager cookieManager;
 
 	private int cookieExpiryTimeout = DEFAULT_COOKIE_EXPIRY_TIMEOUT;
 	private long expiryTimeout = DEFAULT_EXPIRY_TIMEOUT;
@@ -50,10 +51,12 @@ public class Configuration {
 
 	public void validate() {
 		if (certificateRepository == null) {
-			throw new ConfigurationException("A certificate repository is required for the correct setup of the authentication mechanism.");
+			throw new ConfigurationException(
+					"A certificate repository is required for the correct setup of the authentication mechanism.");
 		}
 		if (myProvider == null) {
-			throw new ConfigurationException("The name of the provider is required for the correct setup of the authentication mechanism.");
+			throw new ConfigurationException(
+					"The name of the provider is required for the correct setup of the authentication mechanism.");
 		}
 
 		if (allowedProviders == null) {
@@ -95,7 +98,7 @@ public class Configuration {
 		return allowedProviders;
 	}
 
-	public void setAllowedProviders(String ... allowedProviders) {
+	public void setAllowedProviders(String... allowedProviders) {
 		Set<String> set = new HashSet<String>();
 		for (String allowedProvider : allowedProviders) {
 			set.add(allowedProvider);
@@ -138,6 +141,17 @@ public class Configuration {
 
 	public void setAuthenticationExpiredHandler(ResponseHandler authenticationExpiredHanler) {
 		this.authenticationExpiredHanler = authenticationExpiredHanler;
+	}
+
+	public CookieManager getCookieManager() {
+		if (cookieManager == null) {
+			cookieManager = new DefaultCookieManager();
+		}
+		return cookieManager;
+	}
+
+	public void setCookieManager(CookieManager cookieManager) {
+		this.cookieManager = cookieManager;
 	}
 
 	public int getCookieExpiryTimeout() {
