@@ -80,10 +80,13 @@ public class AuthenticationFilter implements Filter {
 		}
 
 		try {
-			registerAuthenticationData(credential);
+			CredentialHolder.register(credential);
 			chain.doFilter(request, response);
 		} finally {
-			deregisterAuthenticationData();
+			if (CredentialHolder.get() == null) {
+				configuration.getCookieManager().expireCookies(request, response);
+			}
+			CredentialHolder.deregister();
 		}
 	}
 
@@ -118,14 +121,6 @@ public class AuthenticationFilter implements Filter {
 		final long timeout = configuration.getExpiryTimeout();
 		final long time = credential.getTimestamp().getTime();
 		return today - timeout > time;
-	}
-
-	protected void deregisterAuthenticationData() {
-		CredentialHolder.deregister();
-	}
-
-	protected void registerAuthenticationData(Credential auth) {
-		CredentialHolder.register(auth);
 	}
 
 	protected Credential processAndValidate(String token) throws InvalidAuthTokenException, ExpiredAuthTokenException {

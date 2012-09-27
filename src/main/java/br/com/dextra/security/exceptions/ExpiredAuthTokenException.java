@@ -1,7 +1,7 @@
 package br.com.dextra.security.exceptions;
 
-import br.com.dextra.security.Credential;
 import static br.com.dextra.security.utils.StringConcatUtil.concat;
+import br.com.dextra.security.Credential;
 
 public class ExpiredAuthTokenException extends SecurityException {
 
