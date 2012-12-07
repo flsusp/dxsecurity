@@ -2,16 +2,21 @@ package br.com.dextra.security.exceptions;
 
 public class AuthenticationFailedException extends SecurityException {
 
-	private static final long serialVersionUID = 4846962942986505063L;
+    private static final long serialVersionUID = 4846962942986505063L;
 
-	private boolean mustShowError;
+    public AuthenticationFailedException() {
+        super();
+    }
 
-	public AuthenticationFailedException(boolean mustShowError) {
-		super();
-		this.mustShowError = mustShowError;
-	}
+    public AuthenticationFailedException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public boolean mustShowError() {
-		return mustShowError;
-	}
+    public AuthenticationFailedException(String message) {
+        super(message);
+    }
+
+    public AuthenticationFailedException(Throwable cause) {
+        super(cause);
+    }
 }

@@ -7,23 +7,32 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class RedirectResponseHandler implements ResponseHandler {
+import br.com.dextra.security.exceptions.AuthenticationFailedException;
 
-	private String path;
+public class RedirectResponseHandler implements ResponseHandler,
+        AuthenticationFailedResponseHandler<AuthenticationFailedException> {
 
-	public RedirectResponseHandler(String path) {
-		super();
-		if (path != null) {
-			path = path.trim();
-			if (path.length() > 0 && !path.startsWith("/")) {
-				path = concat("/", path);
-			}
-		}
-		this.path = path;
-	}
+    private String path;
 
-	@Override
-	public void sendResponse(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.sendRedirect(concat(request.getContextPath(), this.path));
-	}
+    public RedirectResponseHandler(String path) {
+        super();
+        if (path != null) {
+            path = path.trim();
+            if (path.length() > 0 && !path.startsWith("/")) {
+                path = concat("/", path);
+            }
+        }
+        this.path = path;
+    }
+
+    @Override
+    public void sendResponse(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.sendRedirect(concat(request.getContextPath(), this.path));
+    }
+
+    @Override
+    public void sendResponse(AuthenticationFailedException e, HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        sendResponse(request, response);
+    }
 }
