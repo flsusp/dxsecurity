@@ -128,4 +128,114 @@ public class AuthenticationServletTest {
         Assert.assertEquals("", resp.getResponse());
         Assert.assertNull(CredentialHolder.get());
     }
+
+    @Test
+    @SuppressWarnings("serial")
+    public void testFailedAuthenticationWithMultipleAlternativeFlows() throws ServletException, IOException, NoSuchAlgorithmException,
+            NoSuchProviderException {
+        Configuration config = new Configuration();
+
+        StringBase64CertificateRepository certificateRepository = GenerateKeysUtil.generateKeys("Test");
+
+        config.setAllowedProviders("Test");
+        config.setAuthenticationFailedHandler(FakeAuthenticationFailedException1.class, new RedirectResponseHandler(
+                "/redirectTo1"));
+        config.setAuthenticationFailedHandler(FakeAuthenticationFailedException2.class, new RedirectResponseHandler(
+                "/redirectTo2"));
+        config.setCertificateRepository(certificateRepository);
+        config.setCookieExpiryTimeout(1000);
+        config.setExpiryTimeout(1000);
+        config.setMyProvider("Test");
+        config.setRenewTimeout(1000);
+
+        AuthenticationServlet servlet = new AuthenticationServlet() {
+
+            @Override
+            protected Credential authenticate(HttpServletRequest req) throws AuthenticationFailedException {
+                throw new FakeAuthenticationFailedException1();
+            }
+        };
+        servlet.setConfiguration(config);
+
+        HttpServletRequestStub req = new HttpServletRequestStub();
+        HttpServletResponseStub resp = new HttpServletResponseStub();
+
+        servlet.doGet(req, resp);
+
+        Assert.assertEquals(-1, resp.getError());
+        Assert.assertEquals("/redirectTo1", resp.getRedirect());
+        Assert.assertEquals("", resp.getResponse());
+        Assert.assertNull(CredentialHolder.get());
+
+        servlet = new AuthenticationServlet() {
+
+            @Override
+            protected Credential authenticate(HttpServletRequest req) throws AuthenticationFailedException {
+                throw new FakeAuthenticationFailedException2();
+            }
+        };
+        servlet.setConfiguration(config);
+
+        servlet.doGet(req, resp);
+
+        Assert.assertEquals(-1, resp.getError());
+        Assert.assertEquals("/redirectTo2", resp.getRedirect());
+        Assert.assertEquals("", resp.getResponse());
+        Assert.assertNull(CredentialHolder.get());
+    }
+
+    @Test
+    @SuppressWarnings("serial")
+    public void testFailedAuthenticationWithMultipleAlternativeFlowsAndExceptionInheritance() throws ServletException, IOException, NoSuchAlgorithmException,
+            NoSuchProviderException {
+        Configuration config = new Configuration();
+
+        StringBase64CertificateRepository certificateRepository = GenerateKeysUtil.generateKeys("Test");
+
+        config.setAllowedProviders("Test");
+        config.setAuthenticationFailedHandler(FakeAuthenticationFailedException1.class, new RedirectResponseHandler(
+                "/redirectTo1"));
+        config.setAuthenticationFailedHandler(FakeAuthenticationFailedException2.class, new RedirectResponseHandler(
+                "/redirectTo3"));
+        config.setCertificateRepository(certificateRepository);
+        config.setCookieExpiryTimeout(1000);
+        config.setExpiryTimeout(1000);
+        config.setMyProvider("Test");
+        config.setRenewTimeout(1000);
+
+        AuthenticationServlet servlet = new AuthenticationServlet() {
+
+            @Override
+            protected Credential authenticate(HttpServletRequest req) throws AuthenticationFailedException {
+                throw new FakeAuthenticationFailedException1();
+            }
+        };
+        servlet.setConfiguration(config);
+
+        HttpServletRequestStub req = new HttpServletRequestStub();
+        HttpServletResponseStub resp = new HttpServletResponseStub();
+
+        servlet.doGet(req, resp);
+
+        Assert.assertEquals(-1, resp.getError());
+        Assert.assertEquals("/redirectTo1", resp.getRedirect());
+        Assert.assertEquals("", resp.getResponse());
+        Assert.assertNull(CredentialHolder.get());
+
+        servlet = new AuthenticationServlet() {
+
+            @Override
+            protected Credential authenticate(HttpServletRequest req) throws AuthenticationFailedException {
+                throw new FakeAuthenticationFailedException2();
+            }
+        };
+        servlet.setConfiguration(config);
+
+        servlet.doGet(req, resp);
+
+        Assert.assertEquals(-1, resp.getError());
+        Assert.assertEquals("/redirectTo3", resp.getRedirect());
+        Assert.assertEquals("", resp.getResponse());
+        Assert.assertNull(CredentialHolder.get());
+    }
 }
