@@ -9,8 +9,8 @@ import br.com.dextra.security.CredentialHolder;
 
 public class WriteTokenOnResponseResponseHandler implements ResponseHandler {
 
-	@Override
-	public void sendResponse(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.getWriter().append(CredentialHolder.get().toStringFull());
-	}
+    @Override
+    public void sendResponse(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.getWriter().append(CredentialHolder.get().toString());
+    }
 }

@@ -26,186 +26,196 @@ import br.com.dextra.security.utils.AuthenticationUtil;
 
 public class AuthenticationFilter implements Filter {
 
-	private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
 
-	private static final String AUTH_REQUEST_PARAMETER = "auth";
+    private static final String AUTH_REQUEST_PARAMETER = "auth";
 
-	private Configuration configuration;
+    private Configuration configuration;
 
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
-			ServletException {
-		process((HttpServletRequest) request, (HttpServletResponse) response, chain);
-	}
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
+            ServletException {
+        process((HttpServletRequest) request, (HttpServletResponse) response, chain);
+    }
 
-	protected void process(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-			throws IOException, ServletException {
-		String token = extractAuthTokenFrom(request);
+    protected void process(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain)
+            throws IOException, ServletException {
+        final String token = extractAuthTokenFrom(request);
 
-		if (token == null) {
-			sendError(request, response);
-			return;
-		}
+        if (token == null) {
+            sendError(request, response);
+            return;
+        }
 
-		Credential credential;
-		try {
-			credential = processAndValidate(token);
-			logger.info("Received authentication token : {}", credential);
-		} catch (InvalidAuthTokenException e) {
-			logger.warn("Invalid authentication token received.", e);
-			configuration.getCookieManager().expireCookies(request, response);
-			sendError(request, response);
-			return;
-		} catch (ExpiredAuthTokenException e) {
-			logger.warn("Invalid authentication token received.", e);
-			configuration.getCookieManager().expireCookies(request, response);
-			sendExpiryError(request, response, token);
-			return;
-		} catch (Exception e) {
-			logger.warn("Error while processing the received authentication token : " + token, e);
-			configuration.getCookieManager().expireCookies(request, response);
-			sendError(request, response);
-			return;
-		}
+        Credential credential;
+        try {
+            credential = processAndValidate(token);
+        } catch (InvalidAuthTokenException e) {
+            logger.warn("Invalid authentication token received.", e);
+            configuration.getCookieManager().expireCookies(request, response);
+            sendError(request, response);
+            return;
+        } catch (ExpiredAuthTokenException e) {
+            logger.warn("Invalid authentication token received.", e);
+            configuration.getCookieManager().expireCookies(request, response);
+            sendExpiryError(request, response);
+            return;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.warn("Error while processing the received authentication token : " + token, e);
+            configuration.getCookieManager().expireCookies(request, response);
+            sendError(request, response);
+            return;
+        }
 
-		try {
-			if (mustRenew(credential)) {
-				configuration.getCookieManager().expireCookies(request, response);
-				credential = renew(credential, request, response);
-			}
-		} catch (Exception e) {
-			logger.warn("Error while processing the received authentication token : " + token, e);
-			sendError(request, response);
-			return;
-		}
+        try {
+            if (mustRenew(credential)) {
+                configuration.getCookieManager().expireCookies(request, response);
+                credential = renew(credential, request, response);
+            }
+        } catch (Exception e) {
+            logger.warn("Error while processing the received authentication token : " + token, e);
+            sendError(request, response);
+            return;
+        }
 
-		try {
-			CredentialHolder.register(credential);
-			chain.doFilter(request, response);
-		} finally {
-			if (CredentialHolder.get() == null) {
-				configuration.getCookieManager().expireCookies(request, response);
-			}
-			CredentialHolder.deregister();
-		}
-	}
+        try {
+            CredentialHolder.register(credential);
+            chain.doFilter(request, response);
+        } finally {
+            if (CredentialHolder.get() == null) {
+                configuration.getCookieManager().expireCookies(request, response);
+            }
+            CredentialHolder.deregister();
+        }
+    }
 
-	protected Credential renew(Credential credential, HttpServletRequest request, HttpServletResponse response)
-			throws ParseException {
-		credential = credential.renew();
+    protected Credential renew(Credential credential, final HttpServletRequest request,
+            final HttpServletResponse response) throws ParseException {
+        credential = credential.renew();
 
-		String signature = AuthenticationUtil.sign(credential, configuration.getCertificateRepository());
+        final String signature = AuthenticationUtil.sign(credential, configuration.getCertificateRepository());
 
-		logger.info("Authentication token renew to : {}", credential);
+        logger.info("Authentication token renew to : {}", credential);
 
-		credential.setSignature(signature);
-		configuration.getCookieManager().createAuthCookie(credential.toStringFull(), request, response,
-				configuration.getCookieExpiryTimeout());
+        createAuthCookie(credential, signature, request, response);
 
-		return credential;
-	}
+        return credential;
+    }
 
-	protected boolean mustRenew(Credential auth) {
-		final long today = getToday().getTime();
-		final long timeout = configuration.getRenewTimeout();
-		final long time = auth.getTimestamp().getTime();
-		return today - timeout > time;
-	}
+    protected void createAuthCookie(final Credential credential, final String signature, final HttpServletRequest req,
+            final HttpServletResponse resp) {
+        final String value = configuration.getTokenManager().generateToken(credential.toString(), signature);
+        configuration.getCookieManager().createAuthCookie(value, req, resp, configuration.getCookieExpiryTimeout());
+    }
 
-	protected Date getToday() {
-		return new Date();
-	}
+    protected boolean mustRenew(Credential auth) {
+        final long today = getToday().getTime();
+        final long timeout = configuration.getRenewTimeout();
+        final long time = auth.getTimestamp().getTime();
+        return today - timeout > time;
+    }
 
-	protected boolean expired(Credential credential) {
-		final long today = getToday().getTime();
-		final long timeout = configuration.getExpiryTimeout();
-		final long time = credential.getTimestamp().getTime();
-		return today - timeout > time;
-	}
+    protected Date getToday() {
+        return new Date();
+    }
 
-	protected Credential processAndValidate(String token) throws InvalidAuthTokenException, ExpiredAuthTokenException {
-		try {
-			Credential credential = Credential.parse(token);
+    protected boolean expired(Credential credential) {
+        final long today = getToday().getTime();
+        final long timeout = configuration.getExpiryTimeout();
+        final long time = credential.getTimestamp().getTime();
+        return today - timeout > time;
+    }
 
-			String provider = credential.getProvider();
-			if (provider == null || !allowProvider(provider)) {
-				throw new InvalidAuthTokenException(token);
-			}
+    protected Credential processAndValidate(final String token) throws InvalidAuthTokenException,
+            ExpiredAuthTokenException {
+        try {
+            final Token parsedToken = configuration.getTokenManager().parseToken(token);
 
-			if (expired(credential)) {
-				throw new ExpiredAuthTokenException(credential);
-			}
+            final Credential credential = parseCredential(parsedToken);
 
-			if (AuthenticationUtil.verify(credential, credential.getSignature(),
-					configuration.getCertificateRepository())) {
-				return credential;
-			} else {
-				throw new InvalidAuthTokenException(credential);
-			}
-		} catch (TimestampParsingException e) {
-			throw new InvalidAuthTokenException(e, token);
-		}
-	}
+            String provider = credential.getProvider();
+            if (provider == null || !allowProvider(provider)) {
+                throw new InvalidAuthTokenException(token);
+            }
 
-	protected boolean allowProvider(String provider) {
-		return configuration.getAllowedProviders().contains(provider);
-	}
+            if (expired(credential)) {
+                throw new ExpiredAuthTokenException(credential);
+            }
 
-	protected void sendError(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-		configuration.getNotAuthenticatedHandler().sendResponse(req, resp);
-	}
+            if (AuthenticationUtil.verify(credential, parsedToken.getSignature(),
+                    configuration.getCertificateRepository())) {
+                return credential;
+            } else {
+                throw new InvalidAuthTokenException(credential);
+            }
+        } catch (TimestampParsingException e) {
+            throw new InvalidAuthTokenException(e, token);
+        }
+    }
 
-	protected void sendExpiryError(HttpServletRequest req, HttpServletResponse resp, String authToken)
-			throws IOException {
-		configuration.getAuthenticationExpiredHandler().sendResponse(req, resp);
-	}
+    protected Credential parseCredential(final Token parsedToken) {
+        return Credential.parse(parsedToken.getCredential());
+    }
 
-	protected String decode(String token) {
-		try {
-			String decodedToken = URLDecoder.decode(token, "UTF-8");
+    protected boolean allowProvider(final String provider) {
+        return configuration.getAllowedProviders().contains(provider);
+    }
 
-			decodedToken = decodedToken.replaceAll(" ", "+");
+    protected void sendError(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
+        configuration.getNotAuthenticatedHandler().sendResponse(req, resp);
+    }
 
-			return decodedToken;
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    protected void sendExpiryError(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
+        configuration.getAuthenticationExpiredHandler().sendResponse(req, resp);
+    }
 
-	protected String extractAuthTokenFrom(HttpServletRequest request) {
-		String authToken = request.getParameter(AUTH_REQUEST_PARAMETER);
-		if (authToken != null) {
-			return decode(authToken);
-		}
+    protected String decode(String token) {
+        try {
+            String decodedToken = URLDecoder.decode(token, "UTF-8");
 
-		return configuration.getCookieManager().extractAuthTokenFromCookie(request);
-	}
+            decodedToken = decodedToken.replaceAll(" ", "+");
 
-	@Override
-	public void init(FilterConfig config) throws ServletException {
-		String path = config.getInitParameter(Configuration.CONFIGURATION_FILE_KEY);
-		if (path == null) {
-			path = config.getServletContext().getInitParameter(Configuration.CONFIGURATION_FILE_KEY);
-		}
+            return decodedToken;
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-		this.configuration = Configuration.buildFromFile(getClassLoaderForConfiguration(), path);
+    protected String extractAuthTokenFrom(HttpServletRequest request) {
+        String authToken = request.getParameter(AUTH_REQUEST_PARAMETER);
+        if (authToken != null) {
+            return decode(authToken);
+        }
 
-		logger.info("Configuration loaded : {}", configuration);
-	}
+        return configuration.getCookieManager().extractAuthTokenFromCookie(request);
+    }
 
-	protected ClassLoader getClassLoaderForConfiguration() {
-		return getClass().getClassLoader();
-	}
+    @Override
+    public void init(FilterConfig config) throws ServletException {
+        String path = config.getInitParameter(Configuration.CONFIGURATION_FILE_KEY);
+        if (path == null) {
+            path = config.getServletContext().getInitParameter(Configuration.CONFIGURATION_FILE_KEY);
+        }
 
-	@Override
-	public void destroy() {
-	}
+        this.configuration = Configuration.buildFromFile(getClassLoaderForConfiguration(), path);
 
-	public Configuration getConfiguration() {
-		return configuration;
-	}
+        logger.info("Configuration loaded : {}", configuration);
+    }
 
-	public void setConfiguration(Configuration configuration) {
-		this.configuration = configuration;
-	}
+    protected ClassLoader getClassLoaderForConfiguration() {
+        return getClass().getClassLoader();
+    }
+
+    @Override
+    public void destroy() {
+    }
+
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
+    }
 }

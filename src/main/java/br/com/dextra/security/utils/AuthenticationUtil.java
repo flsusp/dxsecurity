@@ -10,46 +10,50 @@ import br.com.dextra.security.configuration.CertificateRepository;
 
 public class AuthenticationUtil {
 
-	public static String sign(Credential data, CertificateRepository certificateRepository) {
-		String authData = data.toString();
+    public static String sign(Credential data, CertificateRepository certificateRepository) {
+        String authData = data.toString();
 
-		String signature = sign(authData, certificateRepository);
-		if (!verify(data, signature, certificateRepository)) {
-			throw new RuntimeException("Missed public and private keys.");
-		}
+        String signature = sign(authData, certificateRepository);
+        if (!verify(data, signature, certificateRepository)) {
+            throw new RuntimeException("Missed public and private keys.");
+        }
 
-		return signature;
-	}
+        return signature;
+    }
 
-	public static boolean verify(Credential authData, String signature, CertificateRepository certificateRepository) {
-		try {
-			Signature sig = Signature.getInstance("SHA1withDSA");
-			sig.initVerify(certificateRepository.getPublicKeyFor(authData.getProvider()));
-			sig.update(authData.toString().getBytes());
-			return sig.verify(SignatureEncodingUtil.decode(signature));
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		} catch (InvalidKeyException e) {
-			throw new RuntimeException(e);
-		} catch (SignatureException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    public static boolean verify(Credential credential, String signature, CertificateRepository certificateRepository) {
+        return verify(credential.getProvider(), credential.toString(), signature, certificateRepository);
+    }
 
-	public static String sign(String data, CertificateRepository certificateRepository) {
-		try {
-			Signature sig = Signature.getInstance("SHA1withDSA");
-			sig.initSign(certificateRepository.getPrivateKey());
-			sig.update(data.getBytes());
-			byte[] signature = sig.sign();
+    public static boolean verify(String provider, String token, String signature, CertificateRepository certificateRepository) {
+        try {
+            Signature sig = Signature.getInstance("SHA1withDSA");
+            sig.initVerify(certificateRepository.getPublicKeyFor(provider));
+            sig.update(token.getBytes());
+            return sig.verify(SignatureEncodingUtil.decode(signature));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        } catch (SignatureException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-			return new String(SignatureEncodingUtil.encode(signature));
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		} catch (InvalidKeyException e) {
-			throw new RuntimeException(e);
-		} catch (SignatureException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    public static String sign(String data, CertificateRepository certificateRepository) {
+        try {
+            Signature sig = Signature.getInstance("SHA1withDSA");
+            sig.initSign(certificateRepository.getPrivateKey());
+            sig.update(data.getBytes());
+            byte[] signature = sig.sign();
+
+            return new String(SignatureEncodingUtil.encode(signature));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        } catch (SignatureException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

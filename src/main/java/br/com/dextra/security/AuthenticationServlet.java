@@ -22,18 +22,14 @@ import br.com.dextra.security.utils.AuthenticationUtil;
  * After that, the {@link Configuration#getAuthenticationSuccessHandler()} is executed.
  *
  * If the authentication fail and the method {@link #authenticate(HttpServletRequest)} throws
- * {@link AuthenticationFailedException} with the <code>mustShowError</code> parameter with value <code>true</code>, the
- * cookie is not created and the {@link Configuration#getAuthenticationFailedHandler()} is executed. If the parameter
- * <code>mustShowError</code> is <code>false</code>, the cookie is also not created and the
- * {@link Configuration#getNotAuthenticatedHandler()} is executed.
+ * {@link AuthenticationFailedException}, the {@link Configuration#getAuthenticationFailedHandler()} is executed.
  */
 public abstract class AuthenticationServlet extends HttpServlet {
 
-    private static final long serialVersionUID = -5794836444983032927L;
+    private static final long serialVersionUID = 2l;
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationServlet.class);
-
-    public static final String CLEAR_CERTIFICATE_REPOSITORY_CACHE_KEY = "certificateRepository.clearCaches";
+    private static final String CLEAR_CERTIFICATE_REPOSITORY_CACHE_KEY = "certificateRepository.clearCaches";
 
     protected Configuration configuration;
 
@@ -65,47 +61,49 @@ public abstract class AuthenticationServlet extends HttpServlet {
         return getClass().getClassLoader();
     }
 
-    protected void startAuthentication(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void startAuthentication(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
         CredentialHolder.deregister();
 
         clearCachesIfRequestParameter(req);
 
         try {
-            Credential credential = authenticate(req);
-            String token = credential.toString();
-
-            logger.info("User authenticated as {}", token);
-
-            String signature = generateAuthenticationDataString(credential);
-            credential.setSignature(signature);
+            final Credential credential = authenticate(req);
             CredentialHolder.register(credential);
 
-            configuration.getCookieManager().createAuthCookie(credential.toStringFull(), req, resp,
-                    configuration.getCookieExpiryTimeout());
+            final String signature = sign(credential);
 
-            sendSuccess(token, req, resp);
+            createAuthCookie(credential, signature, req, resp);
+
+            sendSuccess(credential, req, resp);
         } catch (AuthenticationFailedException e) {
             logger.debug("Authentication failed.", e);
             sendError(e, req, resp);
         }
     }
 
-    private void clearCachesIfRequestParameter(HttpServletRequest req) {
+    protected void createAuthCookie(final Credential credential, final String signature, final HttpServletRequest req,
+            final HttpServletResponse resp) {
+        final String value = configuration.getTokenManager().generateToken(credential.toString(), signature);
+        configuration.getCookieManager().createAuthCookie(value, req, resp, configuration.getCookieExpiryTimeout());
+    }
+
+    protected void clearCachesIfRequestParameter(final HttpServletRequest req) {
         if (req.getParameter(CLEAR_CERTIFICATE_REPOSITORY_CACHE_KEY) != null) {
             configuration.getCertificateRepository().clearCaches();
         }
     }
 
-    protected void sendError(AuthenticationFailedException e, HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
+    protected void sendError(final AuthenticationFailedException e, final HttpServletRequest req,
+            final HttpServletResponse resp) throws IOException {
         configuration.getAuthenticationFailedHandlerFor(e.getClass()).sendResponse(e, req, resp);
     }
 
-    protected void sendSuccess(String token, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void sendSuccess(final Credential credential, final HttpServletRequest req, final HttpServletResponse resp)
+            throws IOException {
         configuration.getAuthenticationSuccessHandler().sendResponse(req, resp);
     }
 
-    protected String generateAuthenticationDataString(Credential credential) {
+    protected String sign(final Credential credential) {
         return AuthenticationUtil.sign(credential, configuration.getCertificateRepository());
     }
 
@@ -128,5 +126,5 @@ public abstract class AuthenticationServlet extends HttpServlet {
      * @throws AuthenticationFailedException
      *             If the authentication fail.
      */
-    protected abstract Credential authenticate(HttpServletRequest req) throws AuthenticationFailedException;
+    protected abstract Credential authenticate(final HttpServletRequest req) throws AuthenticationFailedException;
 }

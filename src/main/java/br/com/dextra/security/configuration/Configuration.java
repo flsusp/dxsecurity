@@ -32,6 +32,7 @@ public class Configuration {
     private ResponseHandler authenticationExpiredHanler;
     private Map<Class<? extends AuthenticationFailedException>, AuthenticationFailedResponseHandler<AuthenticationFailedException>> authenticationFailedHandlers = new HashMap<Class<? extends AuthenticationFailedException>, AuthenticationFailedResponseHandler<AuthenticationFailedException>>();
     private CookieManager cookieManager;
+    private TokenManager tokenManager;
 
     private int cookieExpiryTimeout = DEFAULT_COOKIE_EXPIRY_TIMEOUT;
     private long expiryTimeout = DEFAULT_EXPIRY_TIMEOUT;
@@ -179,6 +180,17 @@ public class Configuration {
 
     public void setAuthenticationExpiredHandler(ResponseHandler authenticationExpiredHanler) {
         this.authenticationExpiredHanler = authenticationExpiredHanler;
+    }
+
+    public TokenManager getTokenManager() {
+        if (tokenManager == null) {
+            tokenManager = new Base64TokenManager();
+        }
+        return tokenManager;
+    }
+
+    public void setTokenManager(TokenManager tokenManager) {
+        this.tokenManager = tokenManager;
     }
 
     public CookieManager getCookieManager() {

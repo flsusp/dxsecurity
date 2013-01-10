@@ -12,59 +12,61 @@ import java.security.SecureRandom;
 import org.apache.commons.codec.binary.Base64;
 
 import br.com.dextra.security.Credential;
+import br.com.dextra.security.configuration.Base64TokenManager;
 import br.com.dextra.security.configuration.StringBase64CertificateRepository;
 
 public class GenerateKeysUtil {
 
-	public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchProviderException, IOException {
-		generateAndStoreKeys("/tmp", "Test");
-	}
+    public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchProviderException, IOException {
+        generateAndStoreKeys("/tmp", "Test");
+    }
 
-	public static StringBase64CertificateRepository generateKeys(String provider) throws NoSuchAlgorithmException,
-			NoSuchProviderException, IOException {
-		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA");
-		SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-		keyGen.initialize(1024, random);
-		KeyPair pair = keyGen.generateKeyPair();
+    public static StringBase64CertificateRepository generateKeys(String provider) throws NoSuchAlgorithmException,
+            NoSuchProviderException, IOException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA");
+        SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+        keyGen.initialize(1024, random);
+        KeyPair pair = keyGen.generateKeyPair();
 
-		show("public.key", pair.getPublic().getEncoded());
-		show("private.key", pair.getPrivate().getEncoded());
+        show("public.key", pair.getPublic().getEncoded());
+        show("private.key", pair.getPrivate().getEncoded());
 
-		StringBase64CertificateRepository repo = new StringBase64CertificateRepository();
-		repo.configurePrivateKey(new String(Base64.encodeBase64(pair.getPrivate().getEncoded())));
-		repo.configurePublicKey(provider, new String(Base64.encodeBase64(pair.getPublic().getEncoded())));
+        StringBase64CertificateRepository repo = new StringBase64CertificateRepository();
+        repo.configurePrivateKey(new String(Base64.encodeBase64(pair.getPrivate().getEncoded())));
+        repo.configurePublicKey(provider, new String(Base64.encodeBase64(pair.getPublic().getEncoded())));
 
-		Credential credential = new Credential("user", provider);
-		String signature = AuthenticationUtil.sign(credential, repo);
-		credential.setSignature(signature);
-		System.out.println(credential.toStringFull());
+        Credential credential = new Credential("user", provider);
+        String signature = AuthenticationUtil.sign(credential, repo);
 
-		return repo;
-	}
+        String token = new Base64TokenManager().generateToken(credential.toString(), signature);
+        System.out.println(token);
 
-	public static void generateAndStoreKeys(String path, String provider) throws NoSuchAlgorithmException,
-			NoSuchProviderException, IOException {
-		StringBase64CertificateRepository repo = generateKeys(provider);
+        return repo;
+    }
 
-		store(repo.getPublicKeyFor(provider).getEncoded(), path + "/public.key");
-		store(repo.getPrivateKey().getEncoded(), path + "/private.key");
-	}
+    public static void generateAndStoreKeys(String path, String provider) throws NoSuchAlgorithmException,
+            NoSuchProviderException, IOException {
+        StringBase64CertificateRepository repo = generateKeys(provider);
 
-	private static void show(String s, byte[] encoded) {
-		byte[] base64 = Base64.encodeBase64(encoded);
+        store(repo.getPublicKeyFor(provider).getEncoded(), path + "/public.key");
+        store(repo.getPrivateKey().getEncoded(), path + "/private.key");
+    }
 
-		System.out.println(s);
-		System.out.println(new String(base64));
-		System.out.println();
-	}
+    private static void show(String s, byte[] encoded) {
+        byte[] base64 = Base64.encodeBase64(encoded);
 
-	private static void store(byte[] encoded, String path) throws IOException {
-		FileOutputStream fos = new FileOutputStream(path);
-		BufferedOutputStream bos = new BufferedOutputStream(fos);
+        System.out.println(s);
+        System.out.println(new String(base64));
+        System.out.println();
+    }
 
-		bos.write(encoded);
+    private static void store(byte[] encoded, String path) throws IOException {
+        FileOutputStream fos = new FileOutputStream(path);
+        BufferedOutputStream bos = new BufferedOutputStream(fos);
 
-		bos.close();
-		fos.close();
-	}
+        bos.write(encoded);
+
+        bos.close();
+        fos.close();
+    }
 }
