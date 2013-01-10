@@ -61,7 +61,6 @@ public class AuthenticationFilter implements Filter {
             sendExpiryError(request, response);
             return;
         } catch (Exception e) {
-            e.printStackTrace();
             logger.warn("Error while processing the received authentication token : " + token, e);
             configuration.getCookieManager().expireCookies(request, response);
             sendError(request, response);
@@ -109,10 +108,13 @@ public class AuthenticationFilter implements Filter {
         configuration.getCookieManager().createAuthCookie(value, req, resp, configuration.getCookieExpiryTimeout());
     }
 
-    protected boolean mustRenew(Credential auth) {
+    protected boolean mustRenew(final Credential credential) {
+        return timeoutExpired(credential, configuration.getRenewTimeout());
+    }
+
+    protected boolean timeoutExpired(final Credential credential, final long timeout) {
         final long today = getToday().getTime();
-        final long timeout = configuration.getRenewTimeout();
-        final long time = auth.getTimestamp().getTime();
+        final long time = credential.getTimestamp().getTime();
         return today - timeout > time;
     }
 
@@ -120,11 +122,8 @@ public class AuthenticationFilter implements Filter {
         return new Date();
     }
 
-    protected boolean expired(Credential credential) {
-        final long today = getToday().getTime();
-        final long timeout = configuration.getExpiryTimeout();
-        final long time = credential.getTimestamp().getTime();
-        return today - timeout > time;
+    protected boolean expired(final Credential credential) {
+        return timeoutExpired(credential, configuration.getExpiryTimeout());
     }
 
     protected Credential processAndValidate(final String token) throws InvalidAuthTokenException,
@@ -143,8 +142,7 @@ public class AuthenticationFilter implements Filter {
                 throw new ExpiredAuthTokenException(credential);
             }
 
-            if (AuthenticationUtil.verify(credential, parsedToken.getSignature(),
-                    configuration.getCertificateRepository())) {
+            if (verifyToken(parsedToken, credential)) {
                 return credential;
             } else {
                 throw new InvalidAuthTokenException(credential);
@@ -152,6 +150,11 @@ public class AuthenticationFilter implements Filter {
         } catch (TimestampParsingException e) {
             throw new InvalidAuthTokenException(e, token);
         }
+    }
+
+    protected boolean verifyToken(final Token parsedToken, final Credential credential) {
+        return AuthenticationUtil.verify(credential, parsedToken.getSignature(),
+                configuration.getCertificateRepository());
     }
 
     protected Credential parseCredential(final Token parsedToken) {
@@ -170,7 +173,7 @@ public class AuthenticationFilter implements Filter {
         configuration.getAuthenticationExpiredHandler().sendResponse(req, resp);
     }
 
-    protected String decode(String token) {
+    protected String decode(final String token) {
         try {
             String decodedToken = URLDecoder.decode(token, "UTF-8");
 
@@ -182,7 +185,7 @@ public class AuthenticationFilter implements Filter {
         }
     }
 
-    protected String extractAuthTokenFrom(HttpServletRequest request) {
+    protected String extractAuthTokenFrom(final HttpServletRequest request) {
         String authToken = request.getParameter(AUTH_REQUEST_PARAMETER);
         if (authToken != null) {
             return decode(authToken);
@@ -192,7 +195,7 @@ public class AuthenticationFilter implements Filter {
     }
 
     @Override
-    public void init(FilterConfig config) throws ServletException {
+    public void init(final FilterConfig config) throws ServletException {
         String path = config.getInitParameter(Configuration.CONFIGURATION_FILE_KEY);
         if (path == null) {
             path = config.getServletContext().getInitParameter(Configuration.CONFIGURATION_FILE_KEY);
@@ -215,7 +218,7 @@ public class AuthenticationFilter implements Filter {
         return configuration;
     }
 
-    public void setConfiguration(Configuration configuration) {
+    public void setConfiguration(final Configuration configuration) {
         this.configuration = configuration;
     }
 }

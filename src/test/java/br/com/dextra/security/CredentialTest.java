@@ -38,7 +38,7 @@ public class CredentialTest {
     public void testCreateCredentialFromToken() {
         Credential credential = new Credential("a", "Services", "20110706.105225185");
 
-        Assert.assertEquals("a", credential.getUsername());
+        Assert.assertEquals("a", credential.getUserId());
         Assert.assertEquals("Services", credential.getProvider());
         Assert.assertEquals(Credential.dateFormat.parseDateTime("20110706.105225185").toDate(),
                 credential.getTimestamp());
@@ -48,7 +48,7 @@ public class CredentialTest {
     public void testCreateParseToken() {
         Credential credential = Credential.parse("a|Services|20110706.105225185");
 
-        Assert.assertEquals("a", credential.getUsername());
+        Assert.assertEquals("a", credential.getUserId());
         Assert.assertEquals("Services", credential.getProvider());
         Assert.assertEquals(Credential.dateFormat.parseDateTime("20110706.105225185").toDate(),
                 credential.getTimestamp());
@@ -65,7 +65,7 @@ public class CredentialTest {
         credential = credential.renew();
         Date secondTimestamp = credential.getTimestamp();
 
-        Assert.assertEquals("a", credential.getUsername());
+        Assert.assertEquals("a", credential.getUserId());
         Assert.assertEquals("Services", credential.getProvider());
         Assert.assertTrue(firstTimestamp.before(secondTimestamp));
     }
