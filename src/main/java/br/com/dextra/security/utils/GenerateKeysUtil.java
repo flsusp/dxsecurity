@@ -48,8 +48,8 @@ public class GenerateKeysUtil {
             NoSuchProviderException, IOException {
         StringBase64CertificateRepository repo = generateKeys(provider);
 
-        store(repo.getPublicKeyFor(provider).getEncoded(), path + "/public.key");
-        store(repo.getPrivateKey().getEncoded(), path + "/private.key");
+        store(repo.getPublicKeyFor(provider, null).getEncoded(), path + "/public.key");
+        store(repo.getPrivateKey().getPrivateKey().getEncoded(), path + "/private.key");
     }
 
     private static void show(String s, byte[] encoded) {

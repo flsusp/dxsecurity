@@ -56,16 +56,21 @@ public class StringBase64CertificateRepository implements CertificateRepository 
     }
 
     @Override
-    public PrivateKey getPrivateKey() {
-        return privateKey;
+    public PrivateKeySpec getPrivateKey() {
+        return new PrivateKeySpec(privateKey, "default");
     }
 
     @Override
-    public PublicKey getPublicKeyFor(String provider) {
+    public PublicKey getPublicKeyFor(String provider, String keyId) {
         return publicKeys.get(provider);
     }
 
     @Override
     public void clearCaches() {
+    }
+
+    @Override
+    public boolean mustRenew(String keyId) {
+        return false;
     }
 }

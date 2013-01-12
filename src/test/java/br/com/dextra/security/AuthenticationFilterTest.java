@@ -90,7 +90,7 @@ public class AuthenticationFilterTest {
 
         StringBase64CertificateRepository certificateRepository = GenerateKeysUtil.generateKeys("Test");
         certificateRepository.configurePublicKey("OtherProvider",
-                new String(Base64.encodeBase64(certificateRepository.getPublicKeyFor("Test").getEncoded())));
+                new String(Base64.encodeBase64(certificateRepository.getPublicKeyFor("Test", null).getEncoded())));
 
         config.setAllowedProviders("Test");
         config.setNotAuthenticatedHandler(new ForbiddenResponseHandler());

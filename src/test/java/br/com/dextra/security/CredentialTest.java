@@ -25,18 +25,18 @@ public class CredentialTest {
             }
         };
 
-        Assert.assertEquals("test|Test|20120207.000000000", credential.toString());
+        Assert.assertEquals("test|Test|20120207.000000000|default", credential.toString());
     }
 
     @Test(expected = TimestampParsingException.class)
     public void testCreateCredentialWithWrongTimestampFormat() {
-        Credential credential = new Credential("a", "Services", "20110706");
+        Credential credential = new Credential("a", "Services", "20110706", "default");
         credential.getTimestamp();
     }
 
     @Test
     public void testCreateCredentialFromToken() {
-        Credential credential = new Credential("a", "Services", "20110706.105225185");
+        Credential credential = new Credential("a", "Services", "20110706.105225185", "default");
 
         Assert.assertEquals("a", credential.getUserId());
         Assert.assertEquals("Services", credential.getProvider());
@@ -46,13 +46,14 @@ public class CredentialTest {
 
     @Test
     public void testCreateParseToken() {
-        Credential credential = Credential.parse("a|Services|20110706.105225185");
+        Credential credential = Credential.parse("a|Services|20110706.105225185|default");
 
         Assert.assertEquals("a", credential.getUserId());
         Assert.assertEquals("Services", credential.getProvider());
         Assert.assertEquals(Credential.dateFormat.parseDateTime("20110706.105225185").toDate(),
                 credential.getTimestamp());
-        Assert.assertEquals("a|Services|20110706.105225185", credential.toString());
+        Assert.assertEquals("default", credential.getKeyId());
+        Assert.assertEquals("a|Services|20110706.105225185|default", credential.toString());
     }
 
     @Test
@@ -72,12 +73,13 @@ public class CredentialTest {
 
     @Test
     public void testSplit() {
-        String[] tokens = Credential.splitTokens("a|Services|20110706.105225185");
+        String[] tokens = Credential.splitTokens("a|Services|20110706.105225185|default");
 
-        Assert.assertEquals(3, tokens.length);
+        Assert.assertEquals(4, tokens.length);
         Assert.assertEquals("a", tokens[0]);
         Assert.assertEquals("Services", tokens[1]);
         Assert.assertEquals("20110706.105225185", tokens[2]);
+        Assert.assertEquals("default", tokens[3]);
     }
 
     @Test

@@ -25,122 +25,127 @@ import br.com.dextra.security.exceptions.InvalidKeyPathException;
 
 public class FileSystemCertificateRepository implements CertificateRepository {
 
-	private static final Logger logger = LoggerFactory.getLogger(FileSystemCertificateRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileSystemCertificateRepository.class);
 
-	private final String privateKeyPath;
-	private final String publicKeysPath;
-	private PrivateKey privateKey;
-	private Map<String, PublicKey> publicKeys = new HashMap<String, PublicKey>();
+    private final String privateKeyPath;
+    private final String publicKeysPath;
+    private PrivateKey privateKey;
+    private Map<String, PublicKey> publicKeys = new HashMap<String, PublicKey>();
 
-	public FileSystemCertificateRepository(String privateKeyPath, String publicKeysPath) {
-		super();
-		this.privateKeyPath = processEnvironmentVariables(privateKeyPath);
-		this.publicKeysPath = processEnvironmentVariables(publicKeysPath);
-	}
+    public FileSystemCertificateRepository(String privateKeyPath, String publicKeysPath) {
+        super();
+        this.privateKeyPath = processEnvironmentVariables(privateKeyPath);
+        this.publicKeysPath = processEnvironmentVariables(publicKeysPath);
+    }
 
-	public static String processEnvironmentVariables(String keyPath) {
-		Map<String, String> env = System.getenv();
+    public static String processEnvironmentVariables(String keyPath) {
+        Map<String, String> env = System.getenv();
 
-		for (Entry<String, String> entry : env.entrySet()) {
-			keyPath = keyPath.replace("$" + entry.getKey(), entry.getValue());
-		}
+        for (Entry<String, String> entry : env.entrySet()) {
+            keyPath = keyPath.replace("$" + entry.getKey(), entry.getValue());
+        }
 
-		return keyPath;
-	}
+        return keyPath;
+    }
 
-	public PrivateKey getPrivateKey() {
-		if (privateKey != null) {
-			return privateKey;
-		}
+    public PrivateKeySpec getPrivateKey() {
+        if (privateKey != null) {
+            return new PrivateKeySpec(privateKey, "default");
+        }
 
-		try {
-			byte[] encKey = loadKeyFor(privateKeyPath);
-			PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encKey);
-			KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
+        try {
+            byte[] encKey = loadKeyFor(privateKeyPath);
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encKey);
+            KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
 
-			privateKey = keyFactory.generatePrivate(privateKeySpec);
+            privateKey = keyFactory.generatePrivate(privateKeySpec);
 
-			return privateKey;
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		} catch (NoSuchProviderException e) {
-			throw new RuntimeException(e);
-		} catch (InvalidKeySpecException e) {
-			throw new RuntimeException(e);
-		}
-	}
+            return new PrivateKeySpec(privateKey, "default");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	public PublicKey getPublicKeyFor(String alias) {
-		PublicKey publicKey = publicKeys.get(alias);
-		if (publicKey != null) {
-			return publicKey;
-		}
+    public PublicKey getPublicKeyFor(String alias, String keyId) {
+        PublicKey publicKey = publicKeys.get(alias);
+        if (publicKey != null) {
+            return publicKey;
+        }
 
-		try {
-			byte[] encKey = loadKeyFor(generatePublicKeyPath(alias));
-			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encKey);
-			KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
-			publicKey = keyFactory.generatePublic(pubKeySpec);
+        try {
+            byte[] encKey = loadKeyFor(generatePublicKeyPath(alias));
+            X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encKey);
+            KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
+            publicKey = keyFactory.generatePublic(pubKeySpec);
 
-			publicKeys.put(alias, publicKey);
+            publicKeys.put(alias, publicKey);
 
-			return publicKey;
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		} catch (NoSuchProviderException e) {
-			throw new RuntimeException(e);
-		} catch (InvalidKeySpecException e) {
-			throw new RuntimeException(e);
-		}
-	}
+            return publicKey;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	public void clearCaches() {
-		this.privateKey = null;
-		this.publicKeys.clear();
-	}
+    public void clearCaches() {
+        this.privateKey = null;
+        this.publicKeys.clear();
+    }
 
-	private byte[] loadKeyFor(String path) {
-		FileInputStream fis = null;
-		try {
-			logger.debug("Loading key {}.", path);
+    private byte[] loadKeyFor(String path) {
+        FileInputStream fis = null;
+        try {
+            logger.debug("Loading key {}.", path);
 
-			fis = new FileInputStream(path);
-			BufferedInputStream bis = new BufferedInputStream(fis);
+            fis = new FileInputStream(path);
+            BufferedInputStream bis = new BufferedInputStream(fis);
 
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-			IOUtils.copy(bis, out);
+            IOUtils.copy(bis, out);
 
-			bis.close();
-			fis.close();
+            bis.close();
+            fis.close();
 
-			return out.toByteArray();
-		} catch (IOException e) {
-			logger.error(MessageFormat.format("Key not found : {0}", path), e);
-			throw new InvalidKeyPathException(path);
-		} finally {
-			if (fis != null) {
-				try {
-					fis.close();
-				} catch (IOException e) {
-				}
-			}
-		}
-	}
+            return out.toByteArray();
+        } catch (IOException e) {
+            logger.error(MessageFormat.format("Key not found : {0}", path), e);
+            throw new InvalidKeyPathException(path);
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
 
-	private String generatePublicKeyPath(String alias) {
-		StringBuilder url = new StringBuilder();
-		url.append(publicKeysPath);
-		url.append("/");
-		url.append(alias);
-		return url.toString();
-	}
+    private String generatePublicKeyPath(String alias) {
+        StringBuilder url = new StringBuilder();
+        url.append(publicKeysPath);
+        url.append("/");
+        url.append(alias);
+        return url.toString();
+    }
 
-	public String getPrivateKeyPath() {
-		return privateKeyPath;
-	}
+    public String getPrivateKeyPath() {
+        return privateKeyPath;
+    }
 
-	public String getPublicKeysPath() {
-		return publicKeysPath;
-	}
+    public String getPublicKeysPath() {
+        return publicKeysPath;
+    }
+
+    @Override
+    public boolean mustRenew(String keyId) {
+        return false;
+    }
 }

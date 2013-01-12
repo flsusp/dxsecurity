@@ -20,6 +20,7 @@ public class Credential implements Serializable {
     private String provider;
     private Date timestamp;
     private String timestampAsString;
+    private String keyId;
 
     public Credential(String userId, String provider) {
         super();
@@ -28,9 +29,10 @@ public class Credential implements Serializable {
         setTimestamp();
     }
 
-    public Credential(String userId, String provider, String timestamp) {
+    protected Credential(String userId, String provider, String timestamp, String keyId) {
         this.userId = userId;
         this.provider = provider;
+        this.keyId = keyId;
 
         setTimestamp(parseDate(timestamp), timestamp);
     }
@@ -41,6 +43,14 @@ public class Credential implements Serializable {
         } catch (Exception e) {
             throw new TimestampParsingException(timestamp, e);
         }
+    }
+
+    public String getKeyId() {
+        return keyId;
+    }
+
+    public void setKeyId(String keyId) {
+        this.keyId = keyId;
     }
 
     protected void setTimestamp() {
@@ -71,7 +81,7 @@ public class Credential implements Serializable {
 
     @Override
     public String toString() {
-        return Joiner.on('|').join(userId, provider, timestampAsString);
+        return Joiner.on('|').useForNull("default").join(userId, provider, timestampAsString, keyId);
     }
 
     public Credential renew() {
@@ -80,11 +90,11 @@ public class Credential implements Serializable {
 
     public static Credential parse(String token) {
         String[] tokens = splitTokens(token);
-        return new Credential(tokens[0], tokens[1], tokens[2]);
+        return new Credential(tokens[0], tokens[1], tokens[2], tokens[3]);
     }
 
     public static String[] splitTokens(String token) {
         String[] tokens = token.split("\\|");
-        return new String[] { tokens[0], tokens[1], tokens[2] };
+        return new String[] { tokens[0], tokens[1], tokens[2], tokens[3] };
     }
 }

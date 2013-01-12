@@ -1,13 +1,14 @@
 package br.com.dextra.security.configuration;
 
-import java.security.PrivateKey;
 import java.security.PublicKey;
 
 public interface CertificateRepository {
 
-	public PrivateKey getPrivateKey();
+    public PrivateKeySpec getPrivateKey();
 
-	public PublicKey getPublicKeyFor(String provider);
+    public PublicKey getPublicKeyFor(String provider, String keyId);
 
-	public void clearCaches();
+    public boolean mustRenew(String keyId);
+
+    public void clearCaches();
 }
