@@ -11,6 +11,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
 import org.junit.Test;
 
+import br.com.dextra.security.configuration.Base64SignatureEncoder;
 import br.com.dextra.security.configuration.Base64TokenManager;
 import br.com.dextra.security.configuration.Configuration;
 import br.com.dextra.security.configuration.DefaultCookieManager;
@@ -18,7 +19,6 @@ import br.com.dextra.security.configuration.DefaultCredentialSigner;
 import br.com.dextra.security.configuration.ForbiddenResponseHandler;
 import br.com.dextra.security.configuration.StringBase64CertificateRepository;
 import br.com.dextra.security.utils.GenerateKeysUtil;
-import br.com.dextra.security.utils.SignatureEncodingUtil;
 
 public class AuthenticationFilterTest {
 
@@ -41,7 +41,8 @@ public class AuthenticationFilterTest {
         filter.setConfiguration(config);
 
         Credential credential = new Credential("test", "Test");
-        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository);
+        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository,
+                config.getSignatureEncoder());
 
         HttpServletRequestStub req = new HttpServletRequestStub();
         req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), new Base64TokenManager()
@@ -104,7 +105,8 @@ public class AuthenticationFilterTest {
         filter.setConfiguration(config);
 
         Credential credential = new Credential("test", "OtherProvider");
-        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository);
+        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository,
+                config.getSignatureEncoder());
 
         HttpServletRequestStub req = new HttpServletRequestStub();
         req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), new Base64TokenManager()
@@ -137,7 +139,8 @@ public class AuthenticationFilterTest {
         filter.setConfiguration(config);
 
         Credential credential = new Credential("test", "Test");
-        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository);
+        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository,
+                config.getSignatureEncoder());
 
         HttpServletRequestStub req = new HttpServletRequestStub();
         req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), new Base64TokenManager()
@@ -171,7 +174,8 @@ public class AuthenticationFilterTest {
         filter.setConfiguration(config);
 
         Credential credential = new Credential("test", "Test");
-        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository);
+        String signature = new DefaultCredentialSigner().sign(credential, certificateRepository,
+                config.getSignatureEncoder());
 
         HttpServletRequestStub req = new HttpServletRequestStub();
         req.addCookie(new Cookie(new DefaultCookieManager().generateCookieName(), new Base64TokenManager()
@@ -194,6 +198,6 @@ public class AuthenticationFilterTest {
             }
         }
         Assert.assertNotNull(token);
-        Assert.assertTrue(new String(SignatureEncodingUtil.decode(token)).startsWith("test|Test|"));
+        Assert.assertTrue(new String(new Base64SignatureEncoder().decode(token)).startsWith("test|Test|"));
     }
 }

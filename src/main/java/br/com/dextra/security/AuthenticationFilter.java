@@ -93,7 +93,7 @@ public class AuthenticationFilter implements Filter {
         credential = credential.renew();
 
         final String signature = configuration.getCredentialSigner().sign(credential,
-                configuration.getCertificateRepository());
+                configuration.getCertificateRepository(), configuration.getSignatureEncoder());
 
         logger.info("Authentication token renew to : {}", credential);
 
@@ -154,7 +154,7 @@ public class AuthenticationFilter implements Filter {
 
     protected boolean verifyToken(final Token parsedToken, final Credential credential) {
         return configuration.getCredentialSigner().verify(credential, parsedToken.getSignature(),
-                configuration.getCertificateRepository());
+                configuration.getCertificateRepository(), configuration.getSignatureEncoder());
     }
 
     protected Credential parseCredential(final Token parsedToken) {

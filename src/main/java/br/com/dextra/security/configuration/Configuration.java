@@ -34,6 +34,7 @@ public class Configuration {
     private CookieManager cookieManager;
     private TokenManager tokenManager;
     private CredentialSigner credentialSigner;
+    private SignatureEncoder signatureEncoder;
 
     private int cookieExpiryTimeout = DEFAULT_COOKIE_EXPIRY_TIMEOUT;
     private long expiryTimeout = DEFAULT_EXPIRY_TIMEOUT;
@@ -203,6 +204,17 @@ public class Configuration {
 
     public void setCredentialSigner(CredentialSigner credentialSigner) {
         this.credentialSigner = credentialSigner;
+    }
+
+    public SignatureEncoder getSignatureEncoder() {
+        if (signatureEncoder == null) {
+            signatureEncoder = new Base64SignatureEncoder();
+        }
+        return signatureEncoder;
+    }
+
+    public void setSignatureEncoder(SignatureEncoder signatureEncoder) {
+        this.signatureEncoder = signatureEncoder;
     }
 
     public CookieManager getCookieManager() {

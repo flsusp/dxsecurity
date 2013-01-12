@@ -103,7 +103,8 @@ public abstract class AuthenticationServlet extends HttpServlet {
     }
 
     protected String sign(final Credential credential) {
-        return configuration.getCredentialSigner().sign(credential, configuration.getCertificateRepository());
+        return configuration.getCredentialSigner().sign(credential, configuration.getCertificateRepository(),
+                configuration.getSignatureEncoder());
     }
 
     public Configuration getConfiguration() {

@@ -12,6 +12,7 @@ import java.security.SecureRandom;
 import org.apache.commons.codec.binary.Base64;
 
 import br.com.dextra.security.Credential;
+import br.com.dextra.security.configuration.Base64SignatureEncoder;
 import br.com.dextra.security.configuration.Base64TokenManager;
 import br.com.dextra.security.configuration.DefaultCredentialSigner;
 import br.com.dextra.security.configuration.StringBase64CertificateRepository;
@@ -37,7 +38,7 @@ public class GenerateKeysUtil {
         repo.configurePublicKey(provider, new String(Base64.encodeBase64(pair.getPublic().getEncoded())));
 
         Credential credential = new Credential("user", provider);
-        String signature = new DefaultCredentialSigner().sign(credential, repo);
+        String signature = new DefaultCredentialSigner().sign(credential, repo, new Base64SignatureEncoder());
 
         String token = new Base64TokenManager().generateToken(credential.toString(), signature);
         System.out.println(token);
