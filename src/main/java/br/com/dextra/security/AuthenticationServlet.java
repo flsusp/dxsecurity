@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import br.com.dextra.security.configuration.Configuration;
 import br.com.dextra.security.exceptions.AuthenticationFailedException;
-import br.com.dextra.security.utils.AuthenticationUtil;
 
 /**
  * The authentication servlet is responsible for validating the user credentials present on the
@@ -104,7 +103,7 @@ public abstract class AuthenticationServlet extends HttpServlet {
     }
 
     protected String sign(final Credential credential) {
-        return AuthenticationUtil.sign(credential, configuration.getCertificateRepository());
+        return configuration.getCredentialSigner().sign(credential, configuration.getCertificateRepository());
     }
 
     public Configuration getConfiguration() {

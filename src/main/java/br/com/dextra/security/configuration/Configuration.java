@@ -33,6 +33,7 @@ public class Configuration {
     private Map<Class<? extends AuthenticationFailedException>, AuthenticationFailedResponseHandler<AuthenticationFailedException>> authenticationFailedHandlers = new HashMap<Class<? extends AuthenticationFailedException>, AuthenticationFailedResponseHandler<AuthenticationFailedException>>();
     private CookieManager cookieManager;
     private TokenManager tokenManager;
+    private CredentialSigner credentialSigner;
 
     private int cookieExpiryTimeout = DEFAULT_COOKIE_EXPIRY_TIMEOUT;
     private long expiryTimeout = DEFAULT_EXPIRY_TIMEOUT;
@@ -191,6 +192,17 @@ public class Configuration {
 
     public void setTokenManager(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
+    }
+
+    public CredentialSigner getCredentialSigner() {
+        if (credentialSigner == null) {
+            credentialSigner = new DefaultCredentialSigner();
+        }
+        return credentialSigner;
+    }
+
+    public void setCredentialSigner(CredentialSigner credentialSigner) {
+        this.credentialSigner = credentialSigner;
     }
 
     public CookieManager getCookieManager() {

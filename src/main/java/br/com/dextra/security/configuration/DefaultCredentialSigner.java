@@ -1,4 +1,4 @@
-package br.com.dextra.security.utils;
+package br.com.dextra.security.configuration;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -8,12 +8,11 @@ import java.security.Signature;
 import java.security.SignatureException;
 
 import br.com.dextra.security.Credential;
-import br.com.dextra.security.configuration.CertificateRepository;
-import br.com.dextra.security.configuration.PrivateKeySpec;
+import br.com.dextra.security.utils.SignatureEncodingUtil;
 
-public class AuthenticationUtil {
+public class DefaultCredentialSigner implements CredentialSigner {
 
-    public static String sign(final Credential data, final CertificateRepository certificateRepository) {
+    public String sign(final Credential data, final CertificateRepository certificateRepository) {
         final String authData = data.toString();
 
         final PrivateKeySpec privateKeySpec = certificateRepository.getPrivateKey();
@@ -28,14 +27,16 @@ public class AuthenticationUtil {
         return signature;
     }
 
-    public static boolean verify(Credential credential, String signature, CertificateRepository certificateRepository) {
-        PublicKey publicKey = certificateRepository.getPublicKeyFor(credential.getProvider(), credential.getKeyId());
+    public boolean verify(final Credential credential, final String signature,
+            final CertificateRepository certificateRepository) {
+        final PublicKey publicKey = certificateRepository.getPublicKeyFor(credential.getProvider(),
+                credential.getKeyId());
         return verify(credential.toString(), signature, publicKey);
     }
 
-    public static boolean verify(String token, String signature, PublicKey publicKey) {
+    public boolean verify(final String token, final String signature, final PublicKey publicKey) {
         try {
-            Signature sig = Signature.getInstance("SHA1withDSA");
+            final Signature sig = Signature.getInstance("SHA1withDSA");
             sig.initVerify(publicKey);
             sig.update(token.getBytes());
             return sig.verify(SignatureEncodingUtil.decode(signature));
@@ -48,12 +49,12 @@ public class AuthenticationUtil {
         }
     }
 
-    public static String sign(String data, PrivateKey privateKey) {
+    public String sign(final String data, final PrivateKey privateKey) {
         try {
-            Signature sig = Signature.getInstance("SHA1withDSA");
+            final Signature sig = Signature.getInstance("SHA1withDSA");
             sig.initSign(privateKey);
             sig.update(data.getBytes());
-            byte[] signature = sig.sign();
+            final byte[] signature = sig.sign();
 
             return new String(SignatureEncodingUtil.encode(signature));
         } catch (NoSuchAlgorithmException e) {

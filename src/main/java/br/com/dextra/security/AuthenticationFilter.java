@@ -22,7 +22,6 @@ import br.com.dextra.security.configuration.Configuration;
 import br.com.dextra.security.exceptions.ExpiredAuthTokenException;
 import br.com.dextra.security.exceptions.InvalidAuthTokenException;
 import br.com.dextra.security.exceptions.TimestampParsingException;
-import br.com.dextra.security.utils.AuthenticationUtil;
 
 public class AuthenticationFilter implements Filter {
 
@@ -93,7 +92,8 @@ public class AuthenticationFilter implements Filter {
             final HttpServletResponse response) throws ParseException {
         credential = credential.renew();
 
-        final String signature = AuthenticationUtil.sign(credential, configuration.getCertificateRepository());
+        final String signature = configuration.getCredentialSigner().sign(credential,
+                configuration.getCertificateRepository());
 
         logger.info("Authentication token renew to : {}", credential);
 
@@ -153,7 +153,7 @@ public class AuthenticationFilter implements Filter {
     }
 
     protected boolean verifyToken(final Token parsedToken, final Credential credential) {
-        return AuthenticationUtil.verify(credential, parsedToken.getSignature(),
+        return configuration.getCredentialSigner().verify(credential, parsedToken.getSignature(),
                 configuration.getCertificateRepository());
     }
 
