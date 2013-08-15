@@ -18,7 +18,7 @@ public class Base64SignatureEncoderTest {
         String s = new String(encoder.encode(b));
 
         Assert.assertEquals(
-                "GqSQuJOPhVc9ekk6DNfVmiRtqfLSN9x4v4x062J/94+2iEF1LWOYAOM4/aMW+8Tv1hVnzPhDlgZQvpELHpy68sh1Zb/JSfLl6aEeC67zlRMSSstXdSYLNdSgz8070lIJeHVj3Q==",
+                "GqSQuJOPhVc9ekk6DNfVmiRtqfLSN9x4v4x062J_94-2iEF1LWOYAOM4_aMW-8Tv1hVnzPhDlgZQvpELHpy68sh1Zb_JSfLl6aEeC67zlRMSSstXdSYLNdSgz8070lIJeHVj3Q",
                 s);
 
         byte[] b2 = encoder.decode(s);

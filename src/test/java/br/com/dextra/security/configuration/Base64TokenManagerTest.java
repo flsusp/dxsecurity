@@ -15,7 +15,7 @@ public class Base64TokenManagerTest {
         String token = tokenManager.generateToken("credential", "signature");
 
         assertNotNull(token);
-        assertEquals("Y3JlZGVudGlhbEBzaWduYXR1cmU=", token);
+        assertEquals("Y3JlZGVudGlhbEBzaWduYXR1cmU", token);
 
         Token parsedToken = tokenManager.parseToken(token);
 

@@ -12,89 +12,93 @@ import com.google.common.base.Joiner;
 
 public class Credential implements Serializable {
 
-    private static final long serialVersionUID = 4913986898213824694L;
+	private static final long serialVersionUID = 4913986898213824694L;
 
-    protected static final DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyyMMdd.HHmmssSSS");
+	protected static final DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyyMMdd.HHmmssSSS");
 
-    private String userId;
-    private String provider;
-    private Date timestamp;
-    private String timestampAsString;
-    private String keyId;
+	private String userId;
+	private String provider;
+	private Date timestamp;
+	private String timestampAsString;
+	private String keyId;
 
-    public Credential(String userId, String provider) {
-        super();
-        this.userId = userId;
-        this.provider = provider;
-        setTimestamp();
-    }
+	public Credential(String userId, String provider) {
+		super();
+		this.userId = userId;
+		this.provider = provider;
+		setTimestamp();
+	}
 
-    protected Credential(String userId, String provider, String timestamp, String keyId) {
-        this.userId = userId;
-        this.provider = provider;
-        this.keyId = keyId;
+	protected Credential(String userId, String provider, String timestamp, String keyId) {
+		this.userId = userId;
+		this.provider = provider;
+		this.keyId = keyId;
 
-        setTimestamp(parseDate(timestamp), timestamp);
-    }
+		setTimestamp(parseDate(timestamp), timestamp);
+	}
 
-    protected Date parseDate(String timestamp) {
-        try {
-            return dateFormat.parseDateTime(timestamp).toDate();
-        } catch (Exception e) {
-            throw new TimestampParsingException(timestamp, e);
-        }
-    }
+	protected Date parseDate(String timestamp) {
+		try {
+			return dateFormat.parseDateTime(timestamp).toDate();
+		} catch (Exception e) {
+			throw new TimestampParsingException(timestamp, e);
+		}
+	}
 
-    public String getKeyId() {
-        return keyId;
-    }
+	public String getKeyId() {
+		return keyId;
+	}
 
-    public void setKeyId(String keyId) {
-        this.keyId = keyId;
-    }
+	public void setKeyId(String keyId) {
+		this.keyId = keyId;
+	}
 
-    protected void setTimestamp() {
-        Date date = getToday();
-        setTimestamp(date, dateFormat.print(date.getTime()));
-    }
+	protected void setTimestamp() {
+		Date date = getToday();
+		setTimestamp(date, dateFormat.print(date.getTime()));
+	}
 
-    protected Date getToday() {
-        return new Date();
-    }
+	protected Date getToday() {
+		return new Date();
+	}
 
-    protected void setTimestamp(Date date, String timestamp) {
-        this.timestamp = date;
-        this.timestampAsString = timestamp;
-    }
+	protected void setTimestamp(Date date, String timestamp) {
+		this.timestamp = date;
+		this.timestampAsString = timestamp;
+	}
 
-    public String getUserId() {
-        return userId;
-    }
+	public String getUserId() {
+		return userId;
+	}
 
-    public Date getTimestamp() {
-        return timestamp;
-    }
+	public Long getUserIdAsLong() {
+		return (userId != null) ? Long.valueOf(userId) : null;
+	}
 
-    public String getProvider() {
-        return provider;
-    }
+	public Date getTimestamp() {
+		return timestamp;
+	}
 
-    @Override
-    public String toString() {
-        return Joiner.on('|').useForNull("default").join(userId, provider, timestampAsString, keyId);
-    }
+	public String getProvider() {
+		return provider;
+	}
 
-    public Credential renew() {
-        return new Credential(this.getUserId(), this.getProvider());
-    }
+	@Override
+	public String toString() {
+		return Joiner.on('|').useForNull("default").join(userId, provider, timestampAsString, keyId);
+	}
 
-    public static Credential parse(String token) {
-        String[] tokens = splitTokens(token);
-        return new Credential(tokens[0], tokens[1], tokens[2], tokens[3]);
-    }
+	public Credential renew() {
+		return new Credential(this.getUserId(), this.getProvider());
+	}
 
-    public static String[] splitTokens(String token) {
-        String[] tokens = token.split("\\|");
-        return new String[] { tokens[0], tokens[1], tokens[2], tokens[3] };
-    }
+	public static Credential parse(String token) {
+		String[] tokens = splitTokens(token);
+		return new Credential(tokens[0], tokens[1], tokens[2], tokens[3]);
+	}
+
+	public static String[] splitTokens(String token) {
+		String[] tokens = token.split("\\|");
+		return new String[] { tokens[0], tokens[1], tokens[2], tokens[3] };
+	}
 }

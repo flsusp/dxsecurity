@@ -15,6 +15,7 @@ import org.apache.commons.codec.binary.Base64;
 
 public class StringBase64CertificateRepository implements CertificateRepository {
 
+	private final Base64 base64 = new Base64(true);
     private PrivateKey privateKey;
     private Map<String, PublicKey> publicKeys = new HashMap<String, PublicKey>();
 
@@ -35,7 +36,7 @@ public class StringBase64CertificateRepository implements CertificateRepository 
     }
 
     protected byte[] decode(String encoded) {
-        return Base64.decodeBase64(encoded.getBytes());
+        return base64.decode(encoded.getBytes());
     }
 
     public void configurePublicKey(String provider, String encoded) {
