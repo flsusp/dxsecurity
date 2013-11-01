@@ -9,7 +9,7 @@ import com.google.common.base.Splitter;
 
 public class Base64TokenManager implements TokenManager {
 
-    private final SignatureEncoder encoder = new Base64SignatureEncoder();
+    protected final SignatureEncoder encoder = new Base64SignatureEncoder();
 
     @Override
     public String generateToken(String credential, String signature) {

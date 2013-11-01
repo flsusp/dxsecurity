@@ -83,7 +83,7 @@ public class Configuration {
             authenticationExpiredHanler = new ForbiddenResponseHandler();
         }
         if (authenticationSuccessHandler == null) {
-            authenticationSuccessHandler = new WriteTokenOnResponseResponseHandler();
+            authenticationSuccessHandler = new WriteTokenOnResponseResponseHandler(this);
         }
     }
 
